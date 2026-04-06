@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📷 主題拉霸機</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #F5F5F7;
+  --surface: #FFFFFF;
+  --surface2: #E5E5EA;
+  --border: rgba(0,0,0,0.1);
+  --text: #555555;
+  --text-dim: #999999;
+  --text-em: #1D1D1F;
+  --primary: #5A5A60;
+  --primary-glow: rgba(90,90,96,0.15);
+  --gold: #8B6914;
+  --gold-glow: rgba(139,105,20,0.2);
+  --red: #FF3B30;
+  --green: #34C759;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.1);
+  --transition: 0.2s ease;
+  --reel-bg: #F0F0F4;
+  --reel-text: #333;
+  --machine-grad: linear-gradient(145deg,#E8E8EE,#D8D8E0);
+  --machine-border: rgba(0,0,0,0.12);
+}
+[data-theme="dark"] {
+  --bg: #121212;
+  --surface: #1E1E1E;
+  --surface2: #222222;
+  --border: rgba(255,255,255,0.08);
+  --text: #A0A0A0;
+  --text-dim: #606060;
+  --text-em: #FFFFFF;
+  --primary: #0ABAB5;
+  --primary-glow: rgba(10,186,181,0.15);
+  --gold: #D4AF37;
+  --gold-glow: rgba(212,175,55,0.15);
+  --red: #FF453A;
+  --green: #0ABAB5;
+  --shadow: 0 4px 24px rgba(0,0,0,0.6);
+  --reel-bg: #0a0a14;
+  --reel-text: #a0e8ff;
+  --machine-grad: linear-gradient(145deg,#1e1e3a,#12122a);
+  --machine-border: var(--gold);
+}
+
+html { font-size: 19.5px; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 56px;
+  transition: background var(--transition), color var(--transition);
+}
+input,textarea,select,button { font-family: inherit; font-size: inherit; }
+
+/* ── Header ──────────────────────────────── */
+.app-header {
+  width: 100%; max-width: 760px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.logo { display: flex; align-items: center; gap: 8px; font-size: 1.2rem; font-weight: 700; color: var(--text-em); }
+.logo-icon { font-size: 1.35rem; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+.btn-icon {
+  background: none; border: 1px solid var(--border); color: var(--text-dim);
+  cursor: pointer; padding: 7px; border-radius: 8px; font-size: 1rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color var(--transition), background var(--transition), border-color var(--transition);
+  line-height: 1;
+}
+.btn-icon:hover { color: var(--text-em); background: var(--primary-glow); border-color: var(--primary); }
+
+/* ── Onboarding ──────────────────────────── */
+.onboarding-hint {
+  background: var(--primary-glow);
+  border: 1px solid rgba(10,186,181,0.25);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  width: 100%; max-width: 760px;
+  font-size: 0.88rem; line-height: 1.6;
+  color: var(--text); text-align: center;
+}
+.onboarding-hint p { margin-bottom: 6px; }
+.btn-dismiss {
+  background: none; border: 1px solid var(--border); border-radius: 20px;
+  padding: 5px 16px; font-size: 0.8rem; color: var(--text-dim);
+  cursor: pointer; margin-top: 4px;
+  transition: color var(--transition), border-color var(--transition);
+}
+.btn-dismiss:hover { color: var(--primary); border-color: var(--primary); }
+
+/* ── Machine ─────────────────────────────── */
+.machine-wrap {
+  display: flex; align-items: flex-start; gap: 0;
+  width: 100%; max-width: 760px;
+}
+.machine {
+  flex: 1; min-width: 0;
+  background: var(--machine-grad);
+  border: 2px solid var(--machine-border);
+  border-radius: 20px;
+  padding: 24px 22px 20px;
+  box-shadow: var(--shadow);
+  transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+.machine-lights { display: flex; justify-content: center; gap: 10px; margin-bottom: 18px; }
+.light { width: 11px; height: 11px; border-radius: 50%; }
+.light.r { background: var(--red);   box-shadow: 0 0 8px var(--red); }
+.light.y { background: var(--gold);  box-shadow: 0 0 8px var(--gold);  animation: blink 1.6s infinite; }
+.light.g { background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 2.2s infinite 0.7s; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+.stats-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.stats-text { font-size: 0.78rem; color: var(--text-dim); white-space: nowrap; }
+.stats-track { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.stats-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--gold)); border-radius: 3px; transition: width 0.5s ease; }
+
+/* ── Reels ───────────────────────────────── */
+.reels-row { display: grid; gap: 8px; }
+.reel-col { display: flex; flex-direction: column; min-width: 0; }
+.dim-label {
+  font-size: 0.70rem; color: var(--text-dim); text-align: center;
+  margin-bottom: 5px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.reel-window {
+  background: var(--reel-bg); border: 2px solid var(--border); border-radius: 10px;
+  height: 138px; overflow: hidden; position: relative;
+  box-shadow: inset 0 4px 16px rgba(0,0,0,0.2);
+  transition: background var(--transition), border-color var(--transition);
+}
+.reel-window::before,.reel-window::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 44px; z-index: 2; pointer-events: none;
+}
+.reel-window::before { top: 0; background: linear-gradient(to bottom, var(--reel-bg), transparent); }
+.reel-window::after  { bottom: 0; background: linear-gradient(to top, var(--reel-bg), transparent); }
+.center-line {
+  position: absolute; top: 50%; left: 10px; right: 10px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  transform: translateY(-50%); z-index: 3; pointer-events: none; opacity: 0.7;
+}
+.reel-track { display: flex; flex-direction: column; align-items: center; will-change: transform; }
+.reel-item {
+  height: 46px; display: flex; align-items: center; justify-content: center;
+  color: var(--reel-text); width: 100%; padding: 0 8px;
+  text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color 0.2s;
+}
+.reel-item.highlight { color: var(--gold); font-weight: 700; text-shadow: 0 0 10px var(--gold-glow); }
+
+/* ── Result ──────────────────────────────── */
+.result-area { margin-top: 18px; display: none; animation: fadeUp 0.35s ease; }
+.result-area.show { display: block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.result-box {
+  background: var(--primary-glow); border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 10px; padding: 14px 16px; text-align: center; margin-bottom: 12px;
+}
+.result-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 5px; }
+:root:not([data-theme="dark"]) .result-label { color: #666; }
+.result-combo { font-size: 1.15rem; font-weight: 700; color: var(--gold); word-break: break-word; line-height: 1.4; }
+:root:not([data-theme="dark"]) .result-combo { color: #7A5100; }
+.result-btns { display: flex; gap: 10px; }
+.btn-confirm {
+  flex: 1; padding: 11px; border-radius: 8px; border: none;
+  background: var(--primary); color: #fff; font-weight: 700;
+  cursor: pointer; font-size: 0.88rem; transition: all var(--transition);
+}
+.btn-confirm:hover { filter: brightness(1.12); box-shadow: 0 2px 12px var(--primary-glow); }
+
+/* ── Lever ───────────────────────────────── */
+.lever-side {
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 38px; margin-left: 10px; user-select: none;
+}
+.lever-label { font-size: 0.65rem; color: var(--text-dim); margin-bottom: 6px; letter-spacing: 0.5px; }
+.lever-container {
+  position: relative; width: 36px; height: 140px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center;
+}
+.lever-base {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 20px; height: 14px; background: linear-gradient(180deg,#888,#555);
+  border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.lever-rod {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  width: 6px; background: linear-gradient(90deg,#aaa,#ddd,#aaa);
+  border-radius: 3px; height: calc(100% - 14px - 28px);
+  transition: height 0.18s ease; transform-origin: bottom center;
+}
+.lever-knob {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 28px; height: 28px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 35%,#ff8080,#cc0000);
+  box-shadow: 0 0 10px rgba(200,0,0,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  transition: top 0.18s cubic-bezier(.4,0,.2,1); z-index: 2;
+}
+.lever-knob:hover { filter: brightness(1.15); }
+.lever-knob::after {
+  content: ''; width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(255,255,255,0.35); position: absolute; top: 5px; left: 6px;
+}
+.lever-container.pulled .lever-knob { top: calc(100% - 28px - 14px); }
+.lever-container.pulled .lever-rod  { height: 6px; }
+@keyframes leverReturn {
+  0%{top:calc(100% - 28px - 14px)} 60%{top:-6px} 80%{top:4px} 100%{top:0}
+}
+@keyframes rodReturn {
+  0%{height:6px} 60%{height:calc(100% - 14px - 28px + 6px)} 100%{height:calc(100% - 14px - 28px)}
+}
+.lever-container.returning .lever-knob { animation: leverReturn 0.45s cubic-bezier(.4,0,.2,1) forwards; transition: none; }
+.lever-container.returning .lever-rod  { animation: rodReturn  0.45s cubic-bezier(.4,0,.2,1) forwards; transition: none; }
+
+/* ── Modals ──────────────────────────────── */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 200;
+  align-items: center; justify-content: center;
+  padding: 16px; backdrop-filter: blur(4px);
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; padding: 26px 22px;
+  width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto;
+  box-shadow: var(--shadow); animation: fadeUp 0.28s ease;
+  transition: background var(--transition), border-color var(--transition);
+}
+#settingsModal { align-items: flex-start; }
+#settingsModal .modal { margin-top: 16px; max-height: calc(100vh - 32px); }
+.modal-head { display: flex; align-items: center; margin-bottom: 18px; gap: 8px; }
+.modal-head h2 { font-size: 1.05rem; font-weight: 700; color: var(--text-em); flex: 1; }
+.modal-close {
+  background: none; border: none; color: var(--text-dim); font-size: 1.2rem;
+  cursor: pointer; line-height: 1; padding: 2px 5px; border-radius: 4px;
+  transition: color var(--transition);
+}
+.modal-close:hover { color: var(--red); }
+
+/* Form */
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; font-weight: 500; }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+input[type=text],input[type=month],input[type=date],select,textarea {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text-em);
+  transition: border-color var(--transition), background var(--transition); outline: none;
+}
+input:focus,select:focus,textarea:focus { border-color: var(--primary); }
+textarea { resize: vertical; min-height: 110px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: none; border-radius: var(--radius-sm); cursor: pointer;
+  font-weight: 600; font-size: 0.88rem; padding: 9px 16px;
+  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+  white-space: nowrap; width: 100%; margin-top: 8px;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.1); box-shadow: 0 2px 12px var(--primary-glow); }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); background: var(--primary-glow); }
+
+/* ── Tabs ────────────────────────────────── */
+.tab-bar { display: flex; gap: 0; margin-bottom: 18px; border-bottom: 2px solid var(--border); }
+.tab-btn {
+  flex: 1; padding: 10px 0; background: none; border: none;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  color: var(--text-dim); font-weight: 600; font-size: 0.85rem;
+  cursor: pointer; transition: color var(--transition), border-color var(--transition);
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Dim Card Editor ─────────────────────── */
+.dim-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px;
+}
+.dim-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dim-name-input { flex: 1; font-weight: 700; font-size: 0.9rem; padding: 6px 10px; }
+.dim-card-del {
+  background: none; border: none; color: var(--text-dim);
+  cursor: pointer; font-size: 0.9rem; padding: 4px 6px; border-radius: 4px;
+  transition: color var(--transition);
+}
+.dim-card-del:hover { color: var(--red); }
+.dim-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--primary-glow); border: 1px solid rgba(10,186,181,0.2);
+  border-radius: 20px; padding: 4px 10px; font-size: 0.82rem; color: var(--text-em);
+}
+:root:not([data-theme="dark"]) .chip { border-color: rgba(90,90,96,0.2); }
+.chip-del {
+  background: none; border: none; color: var(--text-dim);
+  cursor: pointer; font-size: 0.72rem; line-height: 1; padding: 0 2px;
+  transition: color var(--transition);
+}
+.chip-del:hover { color: var(--red); }
+.dim-add-input { width: 100%; padding: 6px 10px; font-size: 0.82rem; }
+
+/* ── Import/Export fold ──────────────────── */
+.import-export-fold { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+.import-export-fold summary {
+  cursor: pointer; font-size: 0.82rem; color: var(--text-dim); font-weight: 500;
+}
+.import-export-fold summary:hover { color: var(--text); }
+
+/* ── Date details (save modal) ───────────── */
+.date-details { margin-top: 10px; }
+.date-details summary {
+  cursor: pointer; font-size: 0.82rem; color: var(--text-dim); font-weight: 500;
+}
+.date-details summary:hover { color: var(--text); }
+
+/* ── Backup hint ─────────────────────────── */
+.backup-hint {
+  text-align: center; margin-top: 10px; font-size: 0.82rem;
+  color: var(--text-dim); display: none;
+}
+.backup-hint.show { display: block; animation: fadeUp 0.3s ease; }
+.backup-hint span { display: block; margin-bottom: 4px; }
+
+/* ── Toggle ──────────────────────────────── */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+.toggle-row span { font-size: 0.88rem; color: var(--text); }
+.toggle-switch { position: relative; display: inline-flex; align-items: center; flex-shrink: 0; }
+.toggle-switch input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.toggle-switch label {
+  display: block; width: 44px; height: 24px;
+  background: rgba(128,128,128,0.25); border-radius: 12px;
+  cursor: pointer; transition: background var(--transition); position: relative;
+}
+.toggle-switch label::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; background: #fff; border-radius: 50%;
+  transition: transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle-switch input:checked + label { background: var(--primary); }
+.toggle-switch input:checked + label::after { transform: translateX(20px); }
+
+/* ── Font size control ───────────────────── */
+.font-size-ctrl { display: flex; align-items: center; gap: 8px; }
+.font-size-ctrl button {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-em);
+  width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+  font-size: 1.05rem; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--transition), border-color var(--transition); flex-shrink: 0;
+}
+.font-size-ctrl button:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-glow); }
+.font-size-ctrl button:disabled { opacity: 0.3; cursor: default; }
+.fs-label { font-size: 0.82rem; color: var(--text-em); min-width: 40px; text-align: center; font-weight: 600; }
+
+/* ── Table ───────────────────────────────── */
+.theme-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.theme-table th { background: var(--surface2); padding: 7px 10px; text-align: left; font-weight: 600; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+.theme-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); color: var(--text); word-break: break-all; }
+.theme-table tr:last-child td { border-bottom: none; }
+.theme-table th:last-child, .theme-table td:last-child { width: 52px; text-align: center; }
+.history-delete-btn {
+  background: none; border: none; color: var(--text-dim);
+  cursor: pointer; font-size: 1rem; line-height: 1; padding: 4px;
+  border-radius: 6px; transition: color var(--transition), background var(--transition);
+}
+.history-delete-btn:hover { color: var(--red); background: rgba(255,69,58,0.08); }
+.empty-hint { text-align: center; color: var(--text-dim); padding: 18px; font-size: 0.88rem; }
+
+/* ── Toast ───────────────────────────────── */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(70px);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 50px; padding: 9px 22px; font-size: 0.88rem;
+  color: var(--text-em); opacity: 0; transition: all 0.3s; z-index: 999;
+  box-shadow: var(--shadow); max-width: 90vw; text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+@media (max-width: 499px) {
+  .app-header, .machine-wrap { max-width: 100%; }
+  .machine { padding: 18px 14px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="app-header">
+  <div class="logo">
+    <span class="logo-icon">📷</span>
+    <span>主題拉霸機</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn-icon" id="btnTheme" title="切換亮/暗模式">🌙</button>
+    <button class="btn-icon" id="btnSettings" title="設定">⚙️</button>
+  </div>
+</header>
+
+<!-- 首次引導（僅出現一次） -->
+<div class="onboarding-hint" id="onboardingHint" style="display:none">
+  <p>👋 歡迎！拉下右邊的拉桿來隨機抽取組合。</p>
+  <p>想自訂維度？點右上角 ⚙️ 設定。</p>
+  <button class="btn-dismiss" onclick="dismissOnboarding()">知道了</button>
+</div>
+
+<!-- Machine + Lever -->
+<div class="machine-wrap">
+  <div class="machine">
+    <div class="machine-lights">
+      <div class="light r"></div>
+      <div class="light y"></div>
+      <div class="light g"></div>
+    </div>
+    <div class="stats-bar">
+      <span class="stats-text" id="statsText">0 / 0 組合</span>
+      <div class="stats-track"><div class="stats-fill" id="statsFill" style="width:0%"></div></div>
+    </div>
+    <div class="reels-row" id="reelsRow"></div>
+    <div class="result-area" id="resultArea">
+      <div class="result-box">
+        <div class="result-label">本次組合</div>
+        <div class="result-combo" id="resultCombo">—</div>
+      </div>
+      <div class="result-btns">
+        <button class="btn-confirm" onclick="openSaveModal()">✅ 就這個了</button>
+      </div>
+    </div>
+  </div>
+  <div class="lever-side">
+    <span class="lever-label">▼ 抽</span>
+    <div class="lever-container" id="leverEl" onclick="handleLever()">
+      <div class="lever-knob"></div>
+      <div class="lever-rod"></div>
+      <div class="lever-base"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 存檔 Modal ── -->
+<div class="modal-bg" id="saveModal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-head">
+      <h2>💾 存檔</h2>
+      <button class="modal-close" onclick="closeSaveModal()">✕</button>
+    </div>
+    <div class="result-box" style="margin-bottom:14px">
+      <div class="result-label">選定組合</div>
+      <div class="result-combo" id="saveComboDisplay">—</div>
+    </div>
+    <div class="form-group">
+      <label>挑戰月份</label>
+      <input type="month" id="saveMonth">
+    </div>
+    <details class="date-details">
+      <summary>自訂起迄日期</summary>
+      <div class="form-row" style="margin-top:8px">
+        <div class="form-group"><label>開始日</label><input type="date" id="saveStart"></div>
+        <div class="form-group"><label>結束日</label><input type="date" id="saveEnd"></div>
+      </div>
+    </details>
+    <button class="btn btn-primary" id="btnDoSave" onclick="doSave()" style="margin-top:14px">💾 確認存檔</button>
+    <div class="backup-hint" id="backupHint"></div>
+  </div>
+</div>
+
+<!-- ── 設定 Modal（Tab 分頁式） ── -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>⚙️ 設定</h2>
+      <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="tabDim" onclick="switchTab('tabDim')">維度</button>
+      <button class="tab-btn" data-tab="tabRules" onclick="switchTab('tabRules')">規則</button>
+      <button class="tab-btn" data-tab="tabHistory" onclick="switchTab('tabHistory')">記錄</button>
+    </div>
+
+    <!-- Tab: 維度 -->
+    <div class="tab-panel active" id="tabDim">
+      <div id="dimEditor"></div>
+      <button class="btn btn-secondary" onclick="addDimCard()">＋ 新增維度</button>
+      <button class="btn btn-primary" onclick="applyDimEditor({ showSuccessToast: true })" hidden>套用</button>
+      <details class="import-export-fold">
+        <summary>進階：匯入 / 匯出設定檔</summary>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-secondary" style="flex:1" onclick="exportToFile()">📤 匯出</button>
+          <input type="file" id="fileInput" accept=".txt" style="display:none" onchange="importFile(event)">
+          <button class="btn btn-secondary" style="flex:1" onclick="document.getElementById('fileInput').click()">📂 匯入</button>
+        </div>
+      </details>
+    </div>
+
+    <!-- Tab: 規則 -->
+    <div class="tab-panel" id="tabRules">
+      <div class="toggle-row">
+        <span>允許重複抽已使用的組合</span>
+        <div class="toggle-switch">
+          <input type="checkbox" id="toggleAllowRepeat">
+          <label for="toggleAllowRepeat"></label>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span>文字大小</span>
+        <div class="font-size-ctrl">
+          <button id="btnFontDec" onclick="adjustFontScale(-1)">－</button>
+          <span class="fs-label" id="fontScaleDisplay">預設</span>
+          <button id="btnFontInc" onclick="adjustFontScale(+1)">＋</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: 記錄 -->
+    <div class="tab-panel" id="tabHistory">
+      <div id="usedCombosTable"></div>
+      <button class="btn btn-secondary" onclick="clearUsedCombos()" style="margin-top:10px">🗑️ 清除所有使用記錄</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 常數 ────────────────────────────────────────
+const DIM_KEY     = 'mdslot_dimensions';
+const COMBO_KEY   = 'mdslot_used_combos';
+const REPEAT_KEY  = 'mdslot_repeat';
+const THEME_KEY   = 'mdslot_ui_theme';
+const FONT_KEY    = 'mdslot_font_scale';
+const UNSAVED_KEY = 'mdslot_unsaved_count';
+const ONBOARD_KEY = 'mdslot_onboarded';
+
+const FONT_BASE = 19.5;
+const FONT_STEP = 1.5;
+const FONT_MIN  = -3;
+const FONT_MAX  = 3;
+
+const DEFAULT_DIMENSIONS = [
+  { name: '單張/組圖', options: ['單張', '組圖'] },
+  { name: '顏色',      options: ['任意','紅','橘','黃','綠','藍','黑白'] },
+  { name: '題材',      options: ['街拍','風景','人像','生態','建築','抽象','交通工具'] }
+];
+
+// ── 資料讀寫 ────────────────────────────────────
+function loadDimensions() {
+  try { const r = localStorage.getItem(DIM_KEY); if (r) return JSON.parse(r); } catch(e){}
+  return DEFAULT_DIMENSIONS;
+}
+function saveDimensions(d) { localStorage.setItem(DIM_KEY, JSON.stringify(d)); }
+function loadUsedCombos() {
+  try { const r = localStorage.getItem(COMBO_KEY); if (r) return JSON.parse(r); } catch(e){}
+  return [];
+}
+function saveUsedCombos(d) { localStorage.setItem(COMBO_KEY, JSON.stringify(d)); }
+
+let dimensions   = loadDimensions();
+let usedCombos   = loadUsedCombos();
+let allowRepeat  = JSON.parse(localStorage.getItem(REPEAT_KEY) || 'false');
+let fontScale    = parseInt(localStorage.getItem(FONT_KEY) || '0', 10);
+let unsavedCount = parseInt(localStorage.getItem(UNSAVED_KEY) || '0', 10);
+let spinning     = false;
+let currentCombo = null;
+let reelStates   = [];
+let editorDims   = []; // 卡片編輯器暫存狀態
+
+// ── 亮/暗主題 ───────────────────────────────────
+(function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('btnTheme').textContent = saved === 'dark' ? '☀️' : '🌙';
+})();
+document.getElementById('btnTheme').addEventListener('click', () => {
+  const cur  = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(THEME_KEY, next);
+  document.getElementById('btnTheme').textContent = next === 'dark' ? '☀️' : '🌙';
+});
+
+// ── 字體大小 ────────────────────────────────────
+function applyFontScale() {
+  document.documentElement.style.fontSize = (FONT_BASE + fontScale * FONT_STEP) + 'px';
+  const label = document.getElementById('fontScaleDisplay');
+  if (label) label.textContent = fontScale === 0 ? '預設' : fontScale > 0 ? `＋${fontScale}` : `${fontScale}`;
+  const dec = document.getElementById('btnFontDec');
+  const inc = document.getElementById('btnFontInc');
+  if (dec) dec.disabled = fontScale <= FONT_MIN;
+  if (inc) inc.disabled = fontScale >= FONT_MAX;
+}
+function adjustFontScale(delta) {
+  fontScale = Math.max(FONT_MIN, Math.min(FONT_MAX, fontScale + delta));
+  localStorage.setItem(FONT_KEY, fontScale);
+  applyFontScale();
+}
+
+// ── 引導提示 ────────────────────────────────────
+function checkOnboarding() {
+  if (!localStorage.getItem(ONBOARD_KEY)) {
+    document.getElementById('onboardingHint').style.display = '';
+  }
+}
+function dismissOnboarding() {
+  localStorage.setItem(ONBOARD_KEY, '1');
+  document.getElementById('onboardingHint').style.display = 'none';
+}
+
+// ── 多卷軸 DOM ──────────────────────────────────
+function buildReelsDOM() {
+  const row = document.getElementById('reelsRow');
+  row.innerHTML = '';
+  reelStates = [];
+  const n = dimensions.length;
+  if (!n) return;
+  row.style.gridTemplateColumns = n <= 4 ? `repeat(${n},1fr)` : 'repeat(3,1fr)';
+  const fs = n <= 2 ? '0.95rem' : n === 3 ? '0.88rem' : n === 4 ? '0.80rem' : '0.72rem';
+  dimensions.forEach((dim, i) => {
+    const col = document.createElement('div');
+    col.className = 'reel-col';
+    col.innerHTML =
+      `<div class="dim-label">${esc(dim.name)}</div>` +
+      `<div class="reel-window"><div class="center-line"></div>` +
+      `<div class="reel-track" id="reelTrack_${i}"></div></div>`;
+    row.appendChild(col);
+    reelStates.push({ track: null, reelOffset: 0, totalItems: 0, options: dim.options, fontSize: fs });
+  });
+}
+function initAllReels() {
+  dimensions.forEach((dim, i) => {
+    const track = document.getElementById('reelTrack_' + i);
+    if (!track) return;
+    track.innerHTML = '';
+    track.style.transform = 'translateY(0)';
+    track.style.fontSize  = reelStates[i].fontSize;
+    reelStates[i].track      = track;
+    reelStates[i].reelOffset = 0;
+    reelStates[i].totalItems = 0;
+    reelStates[i].options    = dim.options;
+    appendReelCyclesForDim(i, 5);
+  });
+}
+function appendReelCyclesForDim(dimIdx, n) {
+  const s = reelStates[dimIdx];
+  for (let c = 0; c < n; c++)
+    for (const opt of s.options) {
+      const div = document.createElement('div');
+      div.className = 'reel-item';
+      div.textContent = opt;
+      s.track.appendChild(div);
+    }
+  s.totalItems += n * s.options.length;
+}
+
+// ── 統計 ────────────────────────────────────────
+function getTotalCombos() {
+  if (!dimensions.length) return 0;
+  return dimensions.reduce((a, d) => a * d.options.length, 1);
+}
+function updateStats() {
+  const total = getTotalCombos();
+  const used  = usedCombos.length;
+  document.getElementById('statsText').textContent = `${used} / ${total} 組合`;
+  document.getElementById('statsFill').style.width = total ? `${Math.min((used / total) * 100, 100)}%` : '0%';
+}
+
+// ── 笛卡爾積 & 抽籤池 ──────────────────────────
+function computeCartesianProduct() {
+  if (!dimensions.length) return [];
+  return dimensions.reduce((acc, dim) => {
+    const out = [];
+    for (const a of acc) for (const opt of dim.options) out.push([...a, opt]);
+    return out;
+  }, [[]]);
+}
+function getUsedSet() { return new Set(usedCombos.map(r => r.combo.join('|'))); }
+function getAvailableCombos() {
+  const all = computeCartesianProduct();
+  if (allowRepeat) return all;
+  const used  = getUsedSet();
+  const avail = all.filter(c => !used.has(c.join('|')));
+  if (!avail.length) { showToast('所有組合已抽完，重新循環！'); return all; }
+  return avail;
+}
+function pickRandomCombo() {
+  if (!dimensions.length) { showToast('請先在設定中建立維度！'); return null; }
+  const pool = getAvailableCombos();
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+}
+
+// ── 拉桿 ────────────────────────────────────────
+let leverBusy = false;
+function handleLever() {
+  if (leverBusy || spinning) return;
+  const combo = pickRandomCombo();
+  if (!combo) return;
+  leverBusy = true;
+  const el = document.getElementById('leverEl');
+  el.classList.add('pulled');
+  setTimeout(() => {
+    el.classList.remove('pulled');
+    el.classList.add('returning');
+    setTimeout(() => { el.classList.remove('returning'); leverBusy = false; }, 460);
+    startAllSpins(combo);
+  }, 220);
+}
+
+// ── 多卷軸旋轉 ──────────────────────────────────
+const ITEM_H = 46, REEL_H = 138, CENTRE_OFFSET = Math.round((REEL_H - ITEM_H) / 2);
+
+function startAllSpins(targetCombo) {
+  if (spinning) return;
+  spinning = true;
+  currentCombo = null;
+  document.getElementById('resultArea').classList.remove('show');
+
+  const animParams = dimensions.map((dim, i) => {
+    const s = reelStates[i];
+    const options   = s.options;
+    const chosenIdx = options.indexOf(targetCombo[i]);
+    const curCentreRow = Math.round((s.reelOffset + CENTRE_OFFSET) / ITEM_H);
+    const minAhead = options.length * 2;
+    let targetRow  = curCentreRow + minAhead;
+    let diff = chosenIdx - (targetRow % options.length);
+    if (diff < 0) diff += options.length;
+    targetRow += diff;
+    const needed = targetRow + options.length;
+    if (needed > s.totalItems) appendReelCyclesForDim(i, Math.ceil((needed - s.totalItems) / options.length) + 1);
+    const newOffset = targetRow * ITEM_H - CENTRE_OFFSET;
+    return {
+      track: s.track, stateRef: s,
+      startOffset: s.reelOffset, scrollDist: newOffset - s.reelOffset,
+      newOffset, targetRow, duration: 2000 + Math.random() * 400, dimIdx: i, done: false
+    };
+  });
+
+  const startTime = performance.now();
+  const ease = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+
+  function animateAll(now) {
+    let allDone = true;
+    for (const p of animParams) {
+      if (p.done) continue;
+      const t = Math.min((now - startTime) / p.duration, 1);
+      p.track.style.transform = `translateY(-${p.startOffset + ease(t) * p.scrollDist}px)`;
+      if (t < 1) allDone = false;
+      else { p.done = true; p.stateRef.reelOffset = p.newOffset; highlightReelForDim(p.dimIdx, p.targetRow); }
+    }
+    if (!allDone) requestAnimationFrame(animateAll);
+    else { spinning = false; currentCombo = targetCombo; showComboResult(targetCombo); }
+  }
+  requestAnimationFrame(animateAll);
+}
+
+function highlightReelForDim(dimIdx, targetRow) {
+  const track = document.getElementById('reelTrack_' + dimIdx);
+  if (!track) return;
+  Array.from(track.children).forEach((el, i) => el.classList.toggle('highlight', i === targetRow));
+}
+function showComboResult(combo) {
+  document.getElementById('resultCombo').textContent = combo.join(' / ');
+  document.getElementById('resultArea').classList.add('show');
+}
+function clearResult() {
+  currentCombo = null;
+  document.getElementById('resultArea').classList.remove('show');
+  dimensions.forEach((_, i) => {
+    const t = document.getElementById('reelTrack_' + i);
+    if (t) Array.from(t.children).forEach(el => el.classList.remove('highlight'));
+  });
+}
+
+// ── 存檔 Modal ──────────────────────────────────
+function openSaveModal() {
+  if (!currentCombo) return;
+  document.getElementById('saveComboDisplay').textContent = currentCombo.join(' / ');
+  const now  = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const mv   = `${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,'0')}`;
+  const inp  = document.getElementById('saveMonth');
+  inp.value  = mv;
+  autoFillDates(mv);
+  inp.onchange = e => autoFillDates(e.target.value);
+  document.getElementById('btnDoSave').disabled = false;
+  document.getElementById('backupHint').classList.remove('show');
+  document.getElementById('backupHint').innerHTML = '';
+  openModal('saveModal');
+}
+function autoFillDates(mv) {
+  if (!mv) return;
+  const [y, m] = mv.split('-').map(Number);
+  document.getElementById('saveStart').value = `${mv}-01`;
+  document.getElementById('saveEnd').value   = `${mv}-${String(new Date(y, m, 0).getDate()).padStart(2,'0')}`;
+}
+function doSave() {
+  const month = document.getElementById('saveMonth').value;
+  if (!month) { showToast('請選擇挑戰月份'); return; }
+  if (!currentCombo) return;
+  autoFillDates(month);
+  const start = document.getElementById('saveStart').value;
+  const end   = document.getElementById('saveEnd').value;
+
+  usedCombos.push({ combo: [...currentCombo], month, start, end });
+  saveUsedCombos(usedCombos);
+  updateStats();
+  unsavedCount++;
+  localStorage.setItem(UNSAVED_KEY, String(unsavedCount));
+
+  showToast(`✅ 已記錄「${currentCombo.join(' / ')}」`);
+  document.getElementById('btnDoSave').disabled = true;
+  clearResult();
+
+  if (unsavedCount >= 2) {
+    const hint = document.getElementById('backupHint');
+    hint.innerHTML =
+      `<span>已累積 ${unsavedCount} 次存檔尚未備份</span>` +
+      `<button class="btn btn-secondary" onclick="exportAndClose()">📤 匯出備份</button>`;
+    hint.classList.add('show');
+  } else {
+    setTimeout(closeSaveModal, 500);
+  }
+}
+function exportAndClose() {
+  downloadFile('主題拉霸機設定.txt', exportConfig());
+  unsavedCount = 0;
+  localStorage.setItem(UNSAVED_KEY, '0');
+  closeSaveModal();
+  showToast('已匯出備份');
+}
+function closeSaveModal() {
+  closeModal('saveModal');
+  document.getElementById('backupHint').classList.remove('show');
+  document.getElementById('backupHint').innerHTML = '';
+  document.getElementById('btnDoSave').disabled = false;
+}
+
+// ── 匯入/匯出格式 ──────────────────────────────
+function exportConfig() {
+  const lines = [];
+  for (const dim of dimensions) {
+    lines.push(`[${dim.name}]`);
+    for (const opt of dim.options) lines.push(opt);
+    lines.push('');
+  }
+  if (usedCombos.length) {
+    lines.push('[已使用]');
+    lines.push('# 格式：組合（|分隔）  挑戰月份  起始日  結束日');
+    for (const r of usedCombos) {
+      const rest = [r.month, r.start, r.end].filter(Boolean).join('  ');
+      lines.push(rest ? `${r.combo.join('|')}  ${rest}` : r.combo.join('|'));
+    }
+  }
+  return lines.join('\n');
+}
+function parseConfig(text) {
+  const dims = [], used = [];
+  let curDim = null, inUsed = false;
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    if (line === '[已使用]') { inUsed = true; curDim = null; continue; }
+    if (/^\[.+\]$/.test(line)) {
+      inUsed = false;
+      curDim = { name: line.slice(1, -1).trim(), options: [] };
+      dims.push(curDim);
+      continue;
+    }
+    if (inUsed) {
+      const parts = line.split(/[ \t]{2,}|\t/);
+      const combo = parts[0].split('|').map(s => s.trim()).filter(Boolean);
+      if (combo.length) used.push({ combo, month: (parts[1]||'').trim(), start: (parts[2]||'').trim(), end: (parts[3]||'').trim() });
+    } else if (curDim) {
+      curDim.options.push(line);
+    }
+  }
+  return { dims, used };
+}
+function applyParsedConfig(dims, used) {
+  if (!dims.length) { showToast('未找到任何維度設定！'); return null; }
+  for (const d of dims) if (!d.options.length) { showToast(`維度「${d.name}」沒有選項！`); return null; }
+  dimensions = dims;
+  saveDimensions(dimensions);
+  const newN = dimensions.length;
+  const validUsed = used.filter(r => r.combo.length === newN && r.combo.every((o, i) => dimensions[i].options.includes(o)));
+  const skipped = used.length - validUsed.length;
+  usedCombos = validUsed;
+  saveUsedCombos(usedCombos);
+  buildReelsDOM();
+  initAllReels();
+  updateStats();
+  return { skipped };
+}
+function downloadFile(name, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + content], { type: 'text/plain;charset=utf-8' }));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportToFile() {
+  downloadFile('主題拉霸機設定.txt', exportConfig());
+  unsavedCount = 0;
+  localStorage.setItem(UNSAVED_KEY, '0');
+  showToast('已下載設定檔');
+}
+function importFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    let text = ev.target.result;
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const { dims, used } = parseConfig(text.trim());
+    const result = applyParsedConfig(dims, used);
+    if (!result) return;
+    renderDimEditor();
+    renderUsedCombos();
+    let msg = `已匯入 ${dims.length} 個維度、${usedCombos.length} 筆記錄`;
+    if (result.skipped) msg += `（略過 ${result.skipped} 筆）`;
+    showToast(msg);
+  };
+  reader.readAsText(file, 'utf-8');
+  e.target.value = '';
+}
+
+// ── 設定 Modal ──────────────────────────────────
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+  const modal = document.querySelector('#settingsModal .modal');
+  if (modal) modal.scrollTop = 0;
+}
+function openSettingsModal() {
+  renderDimEditor();
+  document.getElementById('toggleAllowRepeat').checked = allowRepeat;
+  renderUsedCombos();
+  switchTab('tabDim');
+  openModal('settingsModal');
+}
+
+// ── 卡片式維度編輯器 ────────────────────────────
+function renderDimEditor() {
+  editorDims = dimensions.map(d => ({ name: d.name, options: [...d.options] }));
+  rebuildDimCards();
+}
+function rebuildDimCards() {
+  const container = document.getElementById('dimEditor');
+  container.innerHTML = '';
+  editorDims.forEach((dim, i) => {
+    const card = document.createElement('div');
+    card.className = 'dim-card';
+    card.dataset.idx = i;
+
+    // Head: name input + delete button
+    const head = document.createElement('div');
+    head.className = 'dim-card-head';
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'dim-name-input';
+    nameInput.value = dim.name;
+    nameInput.placeholder = '維度名稱';
+    nameInput.oninput = () => { editorDims[i].name = nameInput.value; };
+    const delBtn = document.createElement('button');
+    delBtn.className = 'dim-card-del';
+    delBtn.title = '刪除此維度';
+    delBtn.textContent = '✕';
+    delBtn.onclick = () => removeDimCard(i);
+    head.appendChild(nameInput);
+    head.appendChild(delBtn);
+
+    // Chips
+    const chips = document.createElement('div');
+    chips.className = 'dim-chips';
+    chips.id = 'dimChips_' + i;
+    renderChipsInto(chips, i);
+
+    // Add input
+    const addInput = document.createElement('input');
+    addInput.type = 'text';
+    addInput.className = 'dim-add-input';
+    addInput.placeholder = '輸入選項，按 Enter 新增';
+    addInput.onkeydown = (e) => {
+      if (e.key === 'Enter' && addInput.value.trim()) {
+        e.preventDefault();
+        if (addChip(i, addInput.value.trim())) {
+          addInput.value = '';
+          applyDimEditor({ showSuccessToast: false });
+        }
+      }
+    };
+
+    card.appendChild(head);
+    card.appendChild(chips);
+    card.appendChild(addInput);
+    container.appendChild(card);
+  });
+}
+function renderChipsInto(container, dimIdx) {
+  container.innerHTML = '';
+  editorDims[dimIdx].options.forEach((opt, j) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = opt + ' ';
+    const del = document.createElement('button');
+    del.className = 'chip-del';
+    del.textContent = '✕';
+    del.onclick = () => removeChip(dimIdx, j);
+    chip.appendChild(del);
+    container.appendChild(chip);
+  });
+}
+function addDimCard() {
+  editorDims.push({ name: '', options: [] });
+  rebuildDimCards();
+  const inputs = document.querySelectorAll('.dim-name-input');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+function removeDimCard(idx) {
+  editorDims.splice(idx, 1);
+  rebuildDimCards();
+}
+function addChip(dimIdx, value) {
+  if (editorDims[dimIdx].options.includes(value)) { showToast('選項已存在'); return false; }
+  editorDims[dimIdx].options.push(value);
+  const chips = document.getElementById('dimChips_' + dimIdx);
+  if (chips) renderChipsInto(chips, dimIdx);
+  return true;
+}
+function removeChip(dimIdx, optIdx) {
+  editorDims[dimIdx].options.splice(optIdx, 1);
+  const chips = document.getElementById('dimChips_' + dimIdx);
+  if (chips) renderChipsInto(chips, dimIdx);
+  applyDimEditor({ showSuccessToast: false });
+}
+function applyDimEditor({ showSuccessToast = false } = {}) {
+  const valid = editorDims.filter(d => d.name.trim());
+  if (!valid.length) { showToast('請至少設定一個維度！'); return; }
+  for (const d of valid) if (!d.options.length) { showToast(`維度「${d.name}」沒有選項！`); return; }
+
+  const newN = valid.length;
+  dimensions = valid.map(d => ({ name: d.name.trim(), options: [...d.options] }));
+  saveDimensions(dimensions);
+
+  const validUsed = usedCombos.filter(r =>
+    r.combo.length === newN && r.combo.every((o, i) => dimensions[i].options.includes(o))
+  );
+  const removed = usedCombos.length - validUsed.length;
+  usedCombos = validUsed;
+  saveUsedCombos(usedCombos);
+
+  buildReelsDOM();
+  initAllReels();
+  updateStats();
+  renderUsedCombos();
+
+  let msg = `已套用 ${dimensions.length} 個維度`;
+  if (removed) msg += `，清除了 ${removed} 筆不相容的記錄`;
+  if (showSuccessToast) showToast(msg);
+}
+
+// ── 已使用組合表格 ──────────────────────────────
+function renderUsedCombos() {
+  const container = document.getElementById('usedCombosTable');
+  if (!container) return;
+  if (!usedCombos.length) { container.innerHTML = '<div class="empty-hint">尚無使用記錄</div>'; return; }
+  let h = '<table class="theme-table"><thead><tr><th>組合</th><th>月份</th><th>期間</th><th></th></tr></thead><tbody>';
+  for (const [i, r] of usedCombos.entries()) {
+    const period = r.start && r.end ? `${r.start} ~ ${r.end}` : '—';
+    h += `<tr><td>${esc(r.combo.join(' / '))}</td><td>${esc(r.month||'—')}</td><td style="white-space:nowrap">${esc(period)}</td><td><button class="history-delete-btn" onclick="removeUsedCombo(${i})" title="刪除此筆記錄" aria-label="刪除此筆記錄">🗑️</button></td></tr>`;
+  }
+  h += '</tbody></table>';
+  container.innerHTML = h;
+}
+function removeUsedCombo(idx) {
+  const record = usedCombos[idx];
+  if (!record) return;
+  if (!confirm(`確定要清除此筆記錄？\n${record.combo.join(' / ')}`)) return;
+  usedCombos.splice(idx, 1);
+  saveUsedCombos(usedCombos);
+  updateStats();
+  renderUsedCombos();
+  showToast('已清除此筆使用記錄');
+}
+function clearUsedCombos() {
+  if (!usedCombos.length) { showToast('沒有使用記錄'); return; }
+  if (!confirm(`確定要清除全部 ${usedCombos.length} 筆使用記錄？`)) return;
+  usedCombos = [];
+  saveUsedCombos(usedCombos);
+  updateStats();
+  renderUsedCombos();
+  showToast('已清除所有使用記錄');
+}
+
+// ── Modal helpers ───────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-bg').forEach(el => {
+  el.addEventListener('click', e => {
+    if (e.target !== el) return;
+    if (el.id === 'saveModal') closeSaveModal();
+    else el.classList.remove('show');
+  });
+});
+document.getElementById('btnSettings').addEventListener('click', openSettingsModal);
+
+// ── Toast ───────────────────────────────────────
+function showToast(msg, ms = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), ms);
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── 初始化 ──────────────────────────────────────
+function init() {
+  applyFontScale();
+  checkOnboarding();
+  document.getElementById('toggleAllowRepeat').checked = allowRepeat;
+  document.getElementById('toggleAllowRepeat').addEventListener('change', e => {
+    allowRepeat = e.target.checked;
+    localStorage.setItem(REPEAT_KEY, JSON.stringify(allowRepeat));
+  });
+  buildReelsDOM();
+  initAllReels();
+  updateStats();
+}
+init();
+</script>
+</body>
+</html>
