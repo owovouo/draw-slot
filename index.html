@@ -264,6 +264,8 @@ input[type=text],input[type=month],input[type=date],select,textarea {
   transition: border-color var(--transition), background var(--transition); outline: none;
 }
 input[type=date] { padding-right: 4px; }
+[data-theme="dark"] input[type=date],
+[data-theme="dark"] input[type=month] { color-scheme: dark; }
 input:focus,select:focus,textarea:focus { border-color: var(--primary); }
 textarea { resize: vertical; min-height: 110px; }
 
@@ -447,10 +449,10 @@ textarea { resize: vertical; min-height: 110px; }
     <div class="reels-row" id="reelsRow"></div>
     <div class="result-area" id="resultArea">
       <div class="result-box">
-        <div class="result-label">本次組合</div>
+        <div class="result-label" id="resultLabel">本次組合</div>
         <div class="result-combo" id="resultCombo">—</div>
       </div>
-      <div class="result-btns">
+      <div class="result-btns" id="resultBtns">
         <button class="btn-confirm" onclick="openSaveModal()">✅ 就它吧!(存檔)</button>
       </div>
     </div>
@@ -740,6 +742,8 @@ function startAllSpins(targetCombo) {
   if (spinning) return;
   spinning = true;
   currentCombo = null;
+  document.getElementById('resultLabel').textContent = '本次組合';
+  document.getElementById('resultBtns').style.display = '';
   document.getElementById('resultArea').classList.remove('show');
 
   const animParams = dimensions.map((dim, i) => {
@@ -787,7 +791,32 @@ function highlightReelForDim(dimIdx, targetRow) {
 }
 function showComboResult(combo) {
   document.getElementById('resultCombo').textContent = combo.join(' / ');
+  document.getElementById('resultBtns').style.display = '';
   document.getElementById('resultArea').classList.add('show');
+}
+function showLastSaved(record) {
+  const [y, m] = (record.month || '').split('-');
+  const label = y && m ? `${y}年${m}月 組合` : '上次組合';
+  document.getElementById('resultLabel').textContent = label;
+  document.getElementById('resultCombo').textContent = record.combo.join(' / ');
+  document.getElementById('resultBtns').style.display = 'none';
+  document.getElementById('resultArea').classList.add('show');
+  snapReelsToCombo(record.combo);
+}
+function snapReelsToCombo(combo) {
+  dimensions.forEach((dim, i) => {
+    const s = reelStates[i];
+    if (!s || !s.track) return;
+    const idx = s.options.indexOf(combo[i]);
+    if (idx === -1) return; // 選項已不存在，略過
+    const targetRow = 2 * s.options.length + idx;
+    const needed = targetRow + s.options.length;
+    if (needed > s.totalItems) appendReelCyclesForDim(i, Math.ceil((needed - s.totalItems) / s.options.length) + 1);
+    const newOffset = targetRow * ITEM_H - CENTRE_OFFSET;
+    s.track.style.transform = `translateY(-${newOffset}px)`;
+    s.reelOffset = newOffset;
+    highlightReelForDim(i, targetRow);
+  });
 }
 function clearResult() {
   currentCombo = null;
@@ -836,7 +865,9 @@ function doSave() {
 
   showToast(`✅ 已記錄「${currentCombo.join(' / ')}」`);
   document.getElementById('btnDoSave').disabled = true;
-  clearResult();
+  const saved = usedCombos[usedCombos.length - 1];
+  showLastSaved(saved);
+  currentCombo = null;
 
   if (unsavedCount >= 2) {
     const hint = document.getElementById('backupHint');
@@ -1101,6 +1132,14 @@ function renderUsedCombos() {
   h += '</tbody></table>';
   container.innerHTML = h;
 }
+function refreshLastSavedDisplay() {
+  if (currentCombo !== null) return; // 正在顯示新抽結果，不干擾
+  if (usedCombos.length > 0) {
+    showLastSaved(usedCombos[usedCombos.length - 1]);
+  } else {
+    document.getElementById('resultArea').classList.remove('show');
+  }
+}
 function removeUsedCombo(idx) {
   const record = usedCombos[idx];
   if (!record) return;
@@ -1109,6 +1148,7 @@ function removeUsedCombo(idx) {
   saveUsedCombos(usedCombos);
   updateStats();
   renderUsedCombos();
+  refreshLastSavedDisplay();
   showToast('已清除此筆使用記錄');
 }
 function clearUsedCombos() {
@@ -1118,6 +1158,7 @@ function clearUsedCombos() {
   saveUsedCombos(usedCombos);
   updateStats();
   renderUsedCombos();
+  refreshLastSavedDisplay();
   showToast('已清除所有使用記錄');
 }
 
@@ -1155,6 +1196,12 @@ function init() {
   buildReelsDOM();
   initAllReels();
   updateStats();
+
+  // 載入上次存檔的組合
+  if (usedCombos.length > 0) {
+    const last = usedCombos[usedCombos.length - 1];
+    showLastSaved(last);
+  }
 }
 init();
 </script>
