@@ -686,6 +686,23 @@ input,textarea,select,button { font-family: inherit; font-size: inherit; }
   display: flex; gap: 10px; justify-content: center;
   margin-top: 4px;
 }
+.auto-save-control {
+  width: 100%; max-width: 720px;
+  margin: 14px auto 0;
+  display: flex; justify-content: center;
+  position: relative; z-index: 2;
+}
+.auto-save-checkbox {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--text-em); font-size: 0.88rem; font-weight: 700;
+  cursor: pointer; user-select: none;
+}
+.auto-save-checkbox input {
+  width: 18px; height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+[data-theme="dark"] .auto-save-checkbox { color: var(--text); }
 .btn-save {
   background: linear-gradient(180deg, #EF4651, #C12C36);
   color: #fff; border: 1px solid #9B1F28;
@@ -1127,6 +1144,13 @@ textarea { resize: vertical; min-height: 110px; }
   </div>
 </div>
 
+<div class="auto-save-control">
+  <label class="auto-save-checkbox" for="toggleAutoSave">
+    <input type="checkbox" id="toggleAutoSave" checked>
+    自動存檔
+  </label>
+</div>
+
 <!-- ── 存檔 Modal ── -->
 <div class="modal-bg" id="saveModal">
   <div class="modal" style="max-width:380px;">
@@ -1245,12 +1269,65 @@ function saveUsedCombos(d) { localStorage.setItem(COMBO_KEY, JSON.stringify(d));
 let dimensions   = loadDimensions();
 let usedCombos   = loadUsedCombos();
 let allowRepeat  = JSON.parse(localStorage.getItem(REPEAT_KEY) || 'false');
+let autoSaveEnabled = true;
 let fontScale    = parseInt(localStorage.getItem(FONT_KEY) || '0', 10);
 let unsavedCount = parseInt(localStorage.getItem(UNSAVED_KEY) || '0', 10);
 let spinning     = false;
 let currentCombo = null;
+let pendingAutoSave = null;
 let reelStates   = [];
 let editorDims   = [];
+
+function getDefaultChallengeMonth(date = new Date()) {
+  const target = date.getDate() <= 15
+    ? new Date(date.getFullYear(), date.getMonth(), 1)
+    : new Date(date.getFullYear(), date.getMonth() + 1, 1);
+  return `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}`;
+}
+function formatChallengeMonth(month) {
+  const [y, m] = (month || '').split('-');
+  return y && m ? `${y}.${m}` : '';
+}
+function getMonthPeriod(month) {
+  const [y, m] = month.split('-').map(Number);
+  return {
+    start: `${month}-01`,
+    end: `${month}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`
+  };
+}
+function cloneRecord(record) {
+  return record ? { ...record, combo: [...record.combo] } : null;
+}
+function findLastComboRecordIndex(month) {
+  for (let i = usedCombos.length - 1; i >= 0; i--) {
+    if (usedCombos[i].month === month) return i;
+  }
+  return -1;
+}
+function removeComboRecordsByMonth(month) {
+  usedCombos = usedCombos.filter(r => r.month !== month);
+}
+function findComboRecordByMonth(month) {
+  const idx = findLastComboRecordIndex(month);
+  return { idx, record: idx === -1 ? null : cloneRecord(usedCombos[idx]) };
+}
+function saveComboRecord(combo, month) {
+  const { start, end } = getMonthPeriod(month);
+  const record = { combo: [...combo], month, start, end };
+  removeComboRecordsByMonth(month);
+  usedCombos.push(record);
+  saveUsedCombos(usedCombos);
+  updateStats();
+  unsavedCount++;
+  localStorage.setItem(UNSAVED_KEY, String(unsavedCount));
+  return record;
+}
+function restoreComboRecord(month, previousRecord) {
+  removeComboRecordsByMonth(month);
+  if (previousRecord) usedCombos.push(cloneRecord(previousRecord));
+  saveUsedCombos(usedCombos);
+  updateStats();
+}
 
 // ── 主題切換 (lucky ↔ dark) ─────────────────────
 (function initTheme() {
@@ -1460,7 +1537,7 @@ function startAllSpins(targetCombo) {
     return {
       track: s.track, stateRef: s,
       startOffset: s.reelOffset, scrollDist: newOffset - s.reelOffset,
-      newOffset, targetRow, duration: 2000 + Math.random() * 400, dimIdx: i, done: false
+      newOffset, targetRow, duration: 4000, dimIdx: i, done: false
     };
   });
 
@@ -1488,16 +1565,31 @@ function highlightReelForDim(dimIdx, targetRow) {
   Array.from(track.children).forEach((el, i) => el.classList.toggle('highlight', i === targetRow));
 }
 function showComboResult(combo) {
-  document.getElementById('resultCombo').textContent = combo.join(' / ');
+  if (autoSaveEnabled) {
+    const month = getDefaultChallengeMonth();
+    const beforeSave = findComboRecordByMonth(month);
+    const saved = saveComboRecord(combo, month);
+    pendingAutoSave = { month, previousRecord: beforeSave.record };
+    showLastSaved(saved, { showSaveButton: true });
+    return;
+  }
+
+  pendingAutoSave = null;
+  document.getElementById('resultLabel').textContent = '本次結果：';
+  const resultCombo = document.getElementById('resultCombo');
+  resultCombo.textContent = combo.join(' / ');
+  resultCombo.dataset.month = getDefaultChallengeMonth();
   document.getElementById('btnSaveResult').style.display = '';
   document.getElementById('resultArea').classList.add('show');
 }
-function showLastSaved(record) {
+function showLastSaved(record, { showSaveButton = false } = {}) {
   const [y, m] = (record.month || '').split('-');
   const label = y && m ? `${y}年${m}月組合：` : '上次組合：';
   document.getElementById('resultLabel').textContent = label;
-  document.getElementById('resultCombo').textContent = record.combo.join(' / ');
-  document.getElementById('btnSaveResult').style.display = 'none';
+  const resultCombo = document.getElementById('resultCombo');
+  resultCombo.textContent = record.combo.join(' / ');
+  resultCombo.dataset.month = record.month || '';
+  document.getElementById('btnSaveResult').style.display = showSaveButton ? '' : 'none';
   document.getElementById('resultArea').classList.add('show');
   snapReelsToCombo(record.combo);
 }
@@ -1518,6 +1610,8 @@ function snapReelsToCombo(combo) {
 }
 function clearResult() {
   currentCombo = null;
+  pendingAutoSave = null;
+  document.getElementById('resultCombo').dataset.month = '';
   document.getElementById('resultArea').classList.remove('show');
   dimensions.forEach((_, i) => {
     const t = document.getElementById('reelTrack_' + i);
@@ -1529,13 +1623,15 @@ function clearResult() {
 function copyResult() {
   const combo = document.getElementById('resultCombo').textContent.trim();
   if (!combo || combo === '—') { showToast('還沒有結果可以複製'); return; }
+  const month = formatChallengeMonth(document.getElementById('resultCombo').dataset.month);
+  const text = month ? `${month} 主題 ${combo}` : combo;
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(combo).then(
+    navigator.clipboard.writeText(text).then(
       () => showToast('✅ 已複製到剪貼簿'),
-      () => fallbackCopy(combo)
+      () => fallbackCopy(text)
     );
   } else {
-    fallbackCopy(combo);
+    fallbackCopy(text);
   }
 }
 function fallbackCopy(text) {
@@ -1551,9 +1647,7 @@ function fallbackCopy(text) {
 function openSaveModal() {
   if (!currentCombo) return;
   document.getElementById('saveComboDisplay').textContent = currentCombo.join(' / ');
-  const now  = new Date();
-  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const mv   = `${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,'0')}`;
+  const mv   = getDefaultChallengeMonth();
   const inp  = document.getElementById('saveMonth');
   inp.value  = mv;
   autoFillDates(mv);
@@ -1574,20 +1668,16 @@ function doSave() {
   if (!month) { showToast('請選擇挑戰月份'); return; }
   if (!currentCombo) return;
   autoFillDates(month);
-  const start = document.getElementById('saveStart').value;
-  const end   = document.getElementById('saveEnd').value;
-
-  usedCombos.push({ combo: [...currentCombo], month, start, end });
-  saveUsedCombos(usedCombos);
-  updateStats();
-  unsavedCount++;
-  localStorage.setItem(UNSAVED_KEY, String(unsavedCount));
+  if (pendingAutoSave && pendingAutoSave.month !== month) {
+    restoreComboRecord(pendingAutoSave.month, pendingAutoSave.previousRecord);
+  }
+  const saved = saveComboRecord(currentCombo, month);
 
   showToast(`✅ 已記錄「${currentCombo.join(' / ')}」`);
   document.getElementById('btnDoSave').disabled = true;
-  const saved = usedCombos[usedCombos.length - 1];
   showLastSaved(saved);
   currentCombo = null;
+  pendingAutoSave = null;
 
   if (unsavedCount >= 2) {
     const hint = document.getElementById('backupHint');
@@ -1929,6 +2019,10 @@ function init() {
   generateSparkles();
   applyFontScale();
   checkOnboarding();
+  document.getElementById('toggleAutoSave').checked = autoSaveEnabled;
+  document.getElementById('toggleAutoSave').addEventListener('change', e => {
+    autoSaveEnabled = e.target.checked;
+  });
   document.getElementById('toggleAllowRepeat').checked = allowRepeat;
   document.getElementById('toggleAllowRepeat').addEventListener('change', e => {
     allowRepeat = e.target.checked;
