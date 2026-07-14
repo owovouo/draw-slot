@@ -906,6 +906,43 @@ textarea { resize: vertical; min-height: 110px; }
 .empty-hint { text-align: center; color: var(--text-dim); padding: 18px; font-size: 0.88rem; }
 
 /* Toast */
+.default-update-float {
+  display: none;
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 998;
+  width: min(92vw, 420px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  color: var(--text-em);
+  box-shadow: var(--shadow-card);
+}
+.default-update-float.show { display: block; }
+.default-update-float p {
+  margin: 0 28px 12px 0;
+  font-weight: 800;
+  line-height: 1.45;
+}
+.default-update-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 1.05rem;
+}
+.default-update-actions {
+  display: flex;
+  gap: 8px;
+}
+.default-update-actions .btn { flex: 1; }
+
 .toast {
   position: fixed; bottom: 28px; left: 50%;
   transform: translateX(-50%) translateY(70px);
@@ -1068,6 +1105,15 @@ textarea { resize: vertical; min-height: 110px; }
 
 <!-- 背景星芒容器（JS 動態填入） -->
 <div id="sparkleBg" aria-hidden="true"></div>
+
+<div class="default-update-float" id="defaultUpdatePrompt">
+  <button class="default-update-close" onclick="closeDefaultUpdatePrompt()" aria-label="關閉">✕</button>
+  <p>有發現新的預設值，是否要覆蓋舊的？</p>
+  <div class="default-update-actions">
+    <button class="btn btn-primary" onclick="acceptDefaultUpdate()">是，覆蓋</button>
+    <button class="btn btn-secondary" onclick="declineDefaultUpdate()">否，不覆蓋</button>
+  </div>
+</div>
 
 <!-- Header -->
 <header class="app-header">
@@ -1242,6 +1288,7 @@ const THEME_KEY   = 'mdslot_ui_theme_lucky';
 const FONT_KEY    = 'mdslot_font_scale';
 const UNSAVED_KEY = 'mdslot_unsaved_count';
 const ONBOARD_KEY = 'mdslot_onboarded';
+const DEFAULT_ACK_KEY = 'mdslot_default_dimensions_ack';
 
 const FONT_BASE = 19.5;
 const FONT_STEP = 1.5;
@@ -1253,11 +1300,13 @@ const DEFAULT_DIMENSIONS = [
   { name: '顏色',      options: ['任意','紅','橘','黃','綠','藍','黑白'] },
   { name: '題材',      options: ['街拍','風景','人像','生態','建築','抽象','交通工具'] }
 ];
+const DEFAULT_DIMENSIONS_SIGNATURE = JSON.stringify(DEFAULT_DIMENSIONS);
 
 // ── 資料讀寫 ────────────────────────────────────
 function loadDimensions() {
   try { const r = localStorage.getItem(DIM_KEY); if (r) return JSON.parse(r); } catch(e){}
-  return DEFAULT_DIMENSIONS;
+  localStorage.setItem(DEFAULT_ACK_KEY, DEFAULT_DIMENSIONS_SIGNATURE);
+  return DEFAULT_DIMENSIONS.map(d => ({ name: d.name, options: [...d.options] }));
 }
 function saveDimensions(d) { localStorage.setItem(DIM_KEY, JSON.stringify(d)); }
 function loadUsedCombos() {
@@ -1809,6 +1858,37 @@ function openSettingsModal() {
   openModal('settingsModal');
 }
 
+function hasPendingDefaultUpdate() {
+  return !!localStorage.getItem(DIM_KEY) &&
+    localStorage.getItem(DEFAULT_ACK_KEY) !== DEFAULT_DIMENSIONS_SIGNATURE;
+}
+function renderDefaultUpdatePrompt() {
+  document.getElementById('defaultUpdatePrompt').classList.toggle('show', hasPendingDefaultUpdate());
+}
+function closeDefaultUpdatePrompt() {
+  document.getElementById('defaultUpdatePrompt').classList.remove('show');
+}
+function acceptDefaultUpdate() {
+  dimensions = DEFAULT_DIMENSIONS.map(d => ({ name: d.name, options: [...d.options] }));
+  saveDimensions(dimensions);
+  usedCombos = usedCombos.filter(r =>
+    r.combo.length === dimensions.length && r.combo.every((o, i) => dimensions[i].options.includes(o))
+  );
+  saveUsedCombos(usedCombos);
+  localStorage.setItem(DEFAULT_ACK_KEY, DEFAULT_DIMENSIONS_SIGNATURE);
+  renderDimEditor();
+  buildReelsDOM();
+  initAllReels();
+  updateStats();
+  renderUsedCombos();
+  closeDefaultUpdatePrompt();
+  showToast('已套用新的預設值');
+}
+function declineDefaultUpdate() {
+  localStorage.setItem(DEFAULT_ACK_KEY, DEFAULT_DIMENSIONS_SIGNATURE);
+  closeDefaultUpdatePrompt();
+}
+
 // ── 卡片式拉霸編輯器 ────────────────────────────
 function renderDimEditor() {
   editorDims = dimensions.map(d => ({ name: d.name, options: [...d.options] }));
@@ -2019,6 +2099,7 @@ function init() {
   generateSparkles();
   applyFontScale();
   checkOnboarding();
+  renderDefaultUpdatePrompt();
   document.getElementById('toggleAutoSave').checked = autoSaveEnabled;
   document.getElementById('toggleAutoSave').addEventListener('change', e => {
     autoSaveEnabled = e.target.checked;
