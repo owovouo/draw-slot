@@ -46,8 +46,6 @@
   --machine-border: #8E1820;
 
   --light-size: 9px;
-  --knob-size: 48px;
-  --base-h: 22px;
 }
 
 /* ─────────────────────────────────────────────
@@ -438,134 +436,90 @@ input,textarea,select,button { font-family: inherit; font-size: inherit; }
 }
 
 /* ─────────────────────────────────────────────
-   Lever (斜向旋轉式：靜止右上↗ / 拉下右下↘)
+   SPIN 按鈕（主觸發：實機風格大圓鈕）
 ───────────────────────────────────────────── */
-.lever-side {
-  position: absolute;
-  left: 100%; top: 50%;
-  transform: translateY(-50%);
-  margin-left: -8px;          /* 微微貼住機身 */
-  width: 110px; height: 230px;
-  cursor: pointer; user-select: none;
-  overflow: visible;
-  z-index: 3;
+.spin-row {
+  display: flex; justify-content: center;
+  margin-top: 22px;
 }
-
-/* 金色樞軸基座（黏在機身側邊） */
-.lever-mount {
-  position: absolute;
-  left: 0; top: 50%;
-  transform: translateY(-50%);
-  width: 26px; height: 38px;
-  background: linear-gradient(180deg, #F4D77E 0%, #E8C766 30%, #B8932E 80%, #8B6F1E 100%);
-  border: 1px solid #8B6F1E;
-  border-radius: 0 7px 7px 0;
-  box-shadow:
-    0 4px 10px rgba(0,0,0,0.3),
-    inset 0 1px 0 rgba(255,255,255,0.4),
-    inset 0 -2px 4px rgba(0,0,0,0.25);
-  z-index: 1;
-}
-/* 樞軸中心圓點 */
-.lever-mount::after {
-  content: ''; position: absolute;
-  right: -7px; top: 50%; transform: translateY(-50%);
-  width: 14px; height: 14px;
+.spin-btn {
+  width: 92px; height: 92px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fff5b8 0%, #E8C766 50%, #6e5212 100%);
-  box-shadow:
-    inset -2px -2px 4px rgba(0,0,0,0.4),
-    inset 1px 1px 2px rgba(255,255,255,0.4),
-    0 1px 3px rgba(0,0,0,0.3);
-  z-index: 3;
-}
-
-/* 旋轉手臂（rod 用 ::before 繪製） */
-.lever-arm {
-  position: absolute;
-  left: 23px;                  /* 對齊樞軸中心、再往右一點點 */
-  top: calc(50% + 5px);        /* 往下挪 5px，讓桿子根部看起來更自然地伸出 */
-  width: 105px; height: 13px;
-  transform: translateY(-50%) rotate(-55deg);
-  transform-origin: 0% 50%;
-  transition: transform 0.22s cubic-bezier(0.4, 0, 0.6, 1);
-  z-index: 2;
-  pointer-events: none;
-}
-.lever-arm::before {
-  content: ''; position: absolute; inset: 0 18px 0 0;
-  background: linear-gradient(180deg,
-    #6e5212 0%, #B8932E 15%, #E8C766 38%, #F8E5A8 52%,
-    #E8C766 65%, #B8932E 85%, #6e5212 100%);
-  border-radius: 7px;
-  border: 1px solid rgba(0,0,0,0.30);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.4),
-    inset 0 -1px 2px rgba(0,0,0,0.22),
-    0 2px 4px rgba(0,0,0,0.3);
-}
-
-/* 紅球（手臂末端） */
-.lever-knob {
-  position: absolute;
-  right: 0; top: 50%;
-  width: 46px; height: 46px;
-  transform: translate(50%, -50%);
-  border-radius: 50%;
+  border: 3px solid #B8932E;
   background: radial-gradient(circle at 35% 28%,
     #ffb1b1 0%, #ee424c 40%, #C12C36 72%, #7A0F18 100%);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 900; font-size: 1.25rem;
+  letter-spacing: 0.12em; text-indent: 0.12em; /* 置中補償字距 */
+  text-shadow: 0 1px 3px rgba(0,0,0,0.45);
+  cursor: pointer; user-select: none;
+  position: relative;
+  transition: filter 0.15s, transform 0.12s;
+  animation: spin-breathe 2.6s ease-in-out infinite;
+}
+@keyframes spin-breathe {
+  0%, 100% {
+    box-shadow:
+      0 8px 18px rgba(155,31,40,0.5),
+      0 0 18px rgba(230,57,70,0.22),
+      inset -5px -8px 16px rgba(0,0,0,0.28),
+      inset 4px 4px 10px rgba(255,255,255,0.28);
+  }
+  50% {
+    box-shadow:
+      0 8px 18px rgba(155,31,40,0.5),
+      0 0 34px rgba(230,57,70,0.5),
+      inset -5px -8px 16px rgba(0,0,0,0.28),
+      inset 4px 4px 10px rgba(255,255,255,0.28);
+  }
+}
+.spin-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.spin-btn:active:not(:disabled) {
+  transform: translateY(3px) scale(0.97);
+  filter: brightness(0.96);
+}
+.spin-btn:disabled {
+  cursor: default;
+  filter: saturate(0.5) brightness(0.88);
+  animation: none;
   box-shadow:
-    0 6px 14px rgba(155,31,40,0.55),
-    0 0 22px rgba(230,57,70,0.25),
-    inset -5px -7px 14px rgba(0,0,0,0.28),
-    inset 3px 3px 8px rgba(255,255,255,0.28);
-  z-index: 3;
+    0 4px 10px rgba(155,31,40,0.35),
+    inset -5px -8px 16px rgba(0,0,0,0.28),
+    inset 4px 4px 10px rgba(255,255,255,0.18);
 }
-.lever-knob::after {
-  content: ''; width: 15px; height: 15px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0) 70%);
-  position: absolute; top: 8px; left: 10px;
+/* 觸發瞬間的光環（掛在 ::after，不與呼吸光暈打架） */
+.spin-btn::after {
+  content: ''; position: absolute; inset: -3px;
+  border-radius: 50%;
+  opacity: 0; pointer-events: none;
 }
+.spin-btn.pulse::after { animation: ring-pulse 0.7s ease-out forwards; }
 
-.lever-side:hover .lever-knob { filter: brightness(1.06); }
-
-/* 拉下狀態（旋轉到右下） */
-.lever-side.pulled .lever-arm {
-  transform: translateY(-50%) rotate(58deg);
+/* Dark theme SPIN 按鈕 */
+[data-theme="dark"] .spin-btn {
+  border-color: rgba(0,180,216,0.65);
+  background: radial-gradient(circle at 35% 30%,
+    #ff9090 0%, #ee2020 40%, #990000 100%);
+  animation: spin-breathe-dark 2.6s ease-in-out infinite;
 }
-
-/* 回彈動畫：右下 → 過頭往右上 → 微回彈 → 定位 */
-@keyframes leverReturnDiag {
-  0%   { transform: translateY(-50%) rotate(58deg); }
-  55%  { transform: translateY(-50%) rotate(-68deg); }
-  78%  { transform: translateY(-50%) rotate(-50deg); }
-  100% { transform: translateY(-50%) rotate(-55deg); }
+@keyframes spin-breathe-dark {
+  0%, 100% {
+    box-shadow:
+      0 0 15px rgba(255,45,120,0.55), 0 0 30px rgba(255,45,120,0.3),
+      inset 0 2px 4px rgba(255,255,255,0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 24px rgba(255,45,120,0.85), 0 0 52px rgba(255,45,120,0.45),
+      inset 0 2px 4px rgba(255,255,255,0.2);
+  }
 }
-.lever-side.returning .lever-arm {
-  animation: leverReturnDiag 0.46s cubic-bezier(.4,0,.2,1) forwards;
-  transition: none;
+[data-theme="dark"] .spin-btn:disabled {
+  animation: none;
+  box-shadow: 0 0 10px rgba(255,45,120,0.25), inset 0 2px 4px rgba(255,255,255,0.12);
 }
-
-/* Dark theme 拉桿 */
-[data-theme="dark"] .lever-mount {
-  background: linear-gradient(180deg,#205080 0%,#0A2848 60%,#051428 100%);
-  border-color: transparent;
-  box-shadow: 0 0 10px rgba(0,180,216,0.35), 0 3px 8px rgba(0,0,0,0.6);
-}
-[data-theme="dark"] .lever-mount::after {
-  background: radial-gradient(circle at 30% 30%, #c8f4ff, #00B4D8 60%, #003e5c);
-  box-shadow: 0 0 8px rgba(0,180,216,0.5), inset -2px -2px 4px rgba(0,0,0,0.4);
-}
-[data-theme="dark"] .lever-arm::before {
-  background: linear-gradient(180deg,#0A2848 0%,#00B4D8 25%,#70E8FF 50%,#00B4D8 75%,#0A2848 100%);
-  border-color: transparent;
-  box-shadow: 0 0 8px rgba(0,180,216,0.45), inset 0 1px 0 rgba(255,255,255,0.3);
-}
-[data-theme="dark"] .lever-knob {
-  background: radial-gradient(circle at 35% 30%,#ff9090 0%,#ee2020 40%,#990000 100%);
-  box-shadow: 0 0 15px rgba(255,45,120,0.7), 0 0 30px rgba(255,45,120,0.4),
-              0 0 60px rgba(255,45,120,0.15), inset 0 2px 4px rgba(255,255,255,0.2);
-}
+[data-theme="dark"] .spin-btn.pulse::after { animation: ring-pulse-dark 0.7s ease-out forwards; }
 
 /* ─────────────────────────────────────────────
    Action buttons (.btn-action)
@@ -906,43 +860,6 @@ textarea { resize: vertical; min-height: 110px; }
 .empty-hint { text-align: center; color: var(--text-dim); padding: 18px; font-size: 0.88rem; }
 
 /* Toast */
-.default-update-float {
-  display: none;
-  position: fixed;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 998;
-  width: min(92vw, 420px);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  color: var(--text-em);
-  box-shadow: var(--shadow-card);
-}
-.default-update-float.show { display: block; }
-.default-update-float p {
-  margin: 0 28px 12px 0;
-  font-weight: 800;
-  line-height: 1.45;
-}
-.default-update-close {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  border: 0;
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: 1.05rem;
-}
-.default-update-actions {
-  display: flex;
-  gap: 8px;
-}
-.default-update-actions .btn { flex: 1; }
-
 .toast {
   position: fixed; bottom: 28px; left: 50%;
   transform: translateX(-50%) translateY(70px);
@@ -1006,34 +923,8 @@ textarea { resize: vertical; min-height: 110px; }
 }
 
 /* ─────────────────────────────────────────────
-   拉桿漣漪
+   SPIN 觸發特效（光環 + 星星）
 ───────────────────────────────────────────── */
-/* ─── 拉桿球：只做抖動 ─── */
-.lever-arm.vibrate .lever-knob {
-  animation: knob-wobble 0.42s ease-out forwards;
-}
-@keyframes knob-wobble {
-  0%,100% { transform: translate(50%, -50%); }
-  18%     { transform: translate(58%, -56%) rotate(-10deg); }
-  36%     { transform: translate(42%, -44%) rotate(7deg); }
-  54%     { transform: translate(55%, -52%) rotate(-5deg); }
-  72%     { transform: translate(47%, -50%) rotate(2deg); }
-}
-
-/* ─── 光環：獨立元素，留在原位擴散 ─── */
-.lever-ring {
-  position: absolute;
-  right: 0; top: 50%;
-  width: 46px; height: 46px;   /* 與球同尺寸，作為擴散起點 */
-  border-radius: 50%;
-  transform: translate(50%, -50%);
-  pointer-events: none;
-  z-index: 1;                  /* 在球(z-index:3)後面 */
-  opacity: 0;
-}
-.lever-arm.vibrate .lever-ring {
-  animation: ring-pulse 0.7s ease-out forwards;
-}
 @keyframes ring-pulse {
   0%   { opacity: 1;
          box-shadow: 0 0 0 0   rgba(244,215,126,1),
@@ -1044,9 +935,6 @@ textarea { resize: vertical; min-height: 110px; }
   100% { opacity: 0;
          box-shadow: 0 0 0 30px rgba(232,199,102,0),
                      0 0 36px 10px rgba(232,199,102,0); }
-}
-[data-theme="dark"] .lever-arm.vibrate .lever-ring {
-  animation: ring-pulse-dark 0.7s ease-out forwards;
 }
 @keyframes ring-pulse-dark {
   0%   { opacity: 1; box-shadow: 0 0 0 0   rgba(0,180,216,0.95), 0 0 10px 0 rgba(0,180,216,0.8); }
@@ -1069,14 +957,6 @@ textarea { resize: vertical; min-height: 110px; }
   100% { opacity: 0;   transform: translate(var(--tx), var(--ty)) scale(0.15) rotate(var(--rot)); }
 }
 
-/* 中等視窗（拉桿可能擠到邊緣）：縮小拉桿 */
-@media (max-width: 900px) {
-  .lever-side {
-    transform: translateY(-50%) scale(0.85);
-    transform-origin: left center;
-    margin-left: -12px;
-  }
-}
 @media (max-width: 599px) {
   :root, [data-theme="lucky"] { --light-size: 8px; }
   html { font-size: 18px; }
@@ -1084,20 +964,11 @@ textarea { resize: vertical; min-height: 110px; }
   .title-main { font-size: 1.9rem; }
   .title-main::before, .title-main::after { display: none; }
   .machine { padding: 30px 16px 20px; }
-  .lever-side {
-    transform: translateY(-50%) scale(0.6);
-    transform-origin: left center;
-    margin-left: -18px;
-  }
+  .spin-btn { width: 80px; height: 80px; font-size: 1.1rem; }
+  .spin-row { margin-top: 18px; }
   .reel-item { font-size: 1.15rem; }
   .btn-action { font-size: 0.88rem; padding: 11px 14px; }
   .result-actions { flex-wrap: wrap; }
-}
-@media (max-width: 380px) {
-  .lever-side {
-    transform: translateY(-50%) scale(0.48);
-    margin-left: -20px;
-  }
 }
 </style>
 </head>
@@ -1105,15 +976,6 @@ textarea { resize: vertical; min-height: 110px; }
 
 <!-- 背景星芒容器（JS 動態填入） -->
 <div id="sparkleBg" aria-hidden="true"></div>
-
-<div class="default-update-float" id="defaultUpdatePrompt">
-  <button class="default-update-close" onclick="closeDefaultUpdatePrompt()" aria-label="關閉">✕</button>
-  <p>有發現新的預設值，是否要覆蓋舊的？</p>
-  <div class="default-update-actions">
-    <button class="btn btn-primary" onclick="acceptDefaultUpdate()">是，覆蓋</button>
-    <button class="btn btn-secondary" onclick="declineDefaultUpdate()">否，不覆蓋</button>
-  </div>
-</div>
 
 <!-- Header -->
 <header class="app-header">
@@ -1130,17 +992,17 @@ textarea { resize: vertical; min-height: 110px; }
 <!-- Title -->
 <div class="title-block">
   <div class="title-main">主題拉霸機</div>
-  <div class="title-sub">拉下拉桿，隨機生成組合</div>
+  <div class="title-sub">按下「開始」，隨機生成組合</div>
 </div>
 
 <!-- 首次引導 -->
 <div class="onboarding-hint" id="onboardingHint" style="display:none">
-  <p>👋 歡迎！拉下右邊的拉桿來隨機抽取組合。</p>
+  <p>👋 歡迎！按下下方的「開始」按鈕來隨機抽取組合。</p>
   <p>想自訂拉霸？點右上角 ⚙️ 設定。</p>
   <button class="btn-dismiss" onclick="dismissOnboarding()">知道了</button>
 </div>
 
-<!-- Machine + Lever -->
+<!-- Machine -->
 <div class="machine-wrap">
   <div class="machine">
     <div class="lucky-badge">LUCKY</div>
@@ -1158,12 +1020,8 @@ textarea { resize: vertical; min-height: 110px; }
       <div class="stats-track"><div class="stats-fill" id="statsFill" style="width:0%"></div></div>
     </div>
     <div class="reels-row" id="reelsRow"></div>
-  </div>
-  <div class="lever-side" id="leverEl" onclick="handleLever()" title="拉下抽籤">
-    <div class="lever-mount"></div>
-    <div class="lever-arm">
-      <div class="lever-ring"></div>
-      <div class="lever-knob"></div>
+    <div class="spin-row">
+      <button class="spin-btn" id="spinBtn" type="button" title="開始抽選">開始</button>
     </div>
   </div>
 </div>
@@ -1298,7 +1156,7 @@ const FONT_MAX  = 3;
 const DEFAULT_DIMENSIONS = [
   { name: '單張/組圖', options: ['單張', '組圖'] },
   { name: '顏色',      options: ['任意','紅','橘','黃','綠','藍','黑白'] },
-  { name: '題材',      options: ['街拍','風景','人像','生態','建築','抽象','交通工具'] }
+  { name: '題材',      options: ['建築','紀實','抽象','極簡','風景','靜物','樹木','動物','人像','街拍','品牌','音樂','室內空間'] }
 ];
 const DEFAULT_DIMENSIONS_SIGNATURE = JSON.stringify(DEFAULT_DIMENSIONS);
 
@@ -1501,38 +1359,29 @@ function pickRandomCombo() {
   return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
 }
 
-// ── 拉桿 ────────────────────────────────────────
-let leverBusy = false;
-function handleLever() {
-  if (leverBusy || spinning) return;
-  const combo = pickRandomCombo();
-  if (!combo) return;
-  leverBusy = true;
-  const el = document.getElementById('leverEl');
-  el.classList.add('pulled');
-  spawnBallSparkles();
-  setTimeout(() => {
-    el.classList.remove('pulled');
-    el.classList.add('returning');
-    setTimeout(() => { el.classList.remove('returning'); leverBusy = false; }, 460);
-    startAllSpins(combo);
-  }, 220);
+// ── SPIN 按鈕（主觸發） ──────────────────────────
+const spinBtn = document.getElementById('spinBtn');
+
+function spinFireEffects() {
+  spinBtn.classList.remove('pulse');
+  void spinBtn.offsetWidth;
+  spinBtn.classList.add('pulse');
+  setTimeout(() => spinBtn.classList.remove('pulse'), 700);
+  spawnBtnSparkles();
+  if (navigator.vibrate) navigator.vibrate(15);
 }
 
-function spawnBallSparkles() {
-  // 球抖動 + 光環
-  const arm = document.querySelector('.lever-arm');
-  if (arm) {
-    arm.classList.remove('vibrate');
-    void arm.offsetWidth;
-    arm.classList.add('vibrate');
-    setTimeout(() => arm.classList.remove('vibrate'), 700);
-  }
+spinBtn.addEventListener('click', () => {
+  if (spinning) return;
+  const combo = pickRandomCombo();
+  if (!combo) return;
+  spinFireEffects();
+  startAllSpins(combo);
+});
 
-  // 往下掉的閃亮星星
-  const knob = document.querySelector('.lever-knob');
-  if (!knob) return;
-  const rect = knob.getBoundingClientRect();
+function spawnBtnSparkles() {
+  // 從按鈕中心灑出往下掉的閃亮星星
+  const rect = spinBtn.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top  + rect.height / 2;
 
@@ -1565,6 +1414,7 @@ const ITEM_H = 46, REEL_H = 138, CENTRE_OFFSET = Math.round((REEL_H - ITEM_H) / 
 function startAllSpins(targetCombo) {
   if (spinning) return;
   spinning = true;
+  spinBtn.disabled = true;
   currentCombo = null;
   document.getElementById('resultLabel').textContent = '本次結果：';
   document.getElementById('btnSaveResult').style.display = '';
@@ -1603,7 +1453,7 @@ function startAllSpins(targetCombo) {
       else { p.done = true; p.stateRef.reelOffset = p.newOffset; highlightReelForDim(p.dimIdx, p.targetRow); }
     }
     if (!allDone) requestAnimationFrame(animateAll);
-    else { spinning = false; currentCombo = targetCombo; showComboResult(targetCombo); }
+    else { spinning = false; spinBtn.disabled = false; currentCombo = targetCombo; showComboResult(targetCombo); }
   }
   requestAnimationFrame(animateAll);
 }
@@ -1858,17 +1708,10 @@ function openSettingsModal() {
   openModal('settingsModal');
 }
 
-function hasPendingDefaultUpdate() {
-  return !!localStorage.getItem(DIM_KEY) &&
+function applyPendingDefaultUpdate() {
+  const hasPending = !!localStorage.getItem(DIM_KEY) &&
     localStorage.getItem(DEFAULT_ACK_KEY) !== DEFAULT_DIMENSIONS_SIGNATURE;
-}
-function renderDefaultUpdatePrompt() {
-  document.getElementById('defaultUpdatePrompt').classList.toggle('show', hasPendingDefaultUpdate());
-}
-function closeDefaultUpdatePrompt() {
-  document.getElementById('defaultUpdatePrompt').classList.remove('show');
-}
-function acceptDefaultUpdate() {
+  if (!hasPending) return;
   dimensions = DEFAULT_DIMENSIONS.map(d => ({ name: d.name, options: [...d.options] }));
   saveDimensions(dimensions);
   usedCombos = usedCombos.filter(r =>
@@ -1876,17 +1719,7 @@ function acceptDefaultUpdate() {
   );
   saveUsedCombos(usedCombos);
   localStorage.setItem(DEFAULT_ACK_KEY, DEFAULT_DIMENSIONS_SIGNATURE);
-  renderDimEditor();
-  buildReelsDOM();
-  initAllReels();
-  updateStats();
-  renderUsedCombos();
-  closeDefaultUpdatePrompt();
   showToast('已套用新的預設值');
-}
-function declineDefaultUpdate() {
-  localStorage.setItem(DEFAULT_ACK_KEY, DEFAULT_DIMENSIONS_SIGNATURE);
-  closeDefaultUpdatePrompt();
 }
 
 // ── 卡片式拉霸編輯器 ────────────────────────────
@@ -2099,7 +1932,7 @@ function init() {
   generateSparkles();
   applyFontScale();
   checkOnboarding();
-  renderDefaultUpdatePrompt();
+  applyPendingDefaultUpdate();
   document.getElementById('toggleAutoSave').checked = autoSaveEnabled;
   document.getElementById('toggleAutoSave').addEventListener('change', e => {
     autoSaveEnabled = e.target.checked;
